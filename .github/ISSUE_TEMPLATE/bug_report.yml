@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in the app or on the website isn't working
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! For security problems please use [private reporting](https://github.com/postmcp/diskcleanai/security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Scan the startup disk
+        2. Open Find → Duplicates
+        3. …
+  - type: input
+    id: app-version
+    attributes:
+      label: Disk Clean AI version
+      description: Disk Clean AI → About, e.g. 1.2.0 (3)
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version and Mac
+      placeholder: macOS 15.5, MacBook Air M2
+    validations:
+      required: true
+  - type: dropdown
+    id: full-disk-access
+    attributes:
+      label: Does the app have Full Disk Access?
+      options: ["Yes", "No", "Not sure"]
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or logs
+      description: Please blur any file paths or names you don't want to share publicly.

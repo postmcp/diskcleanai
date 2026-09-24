@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Palette — pulled from the reference: white ground, near-black ink, one blue. */
+  --color-ink: #0b0b0f;
+  --color-body: #55565f;
+  --color-muted: #8b8d98;
+  --color-line: #e7e8ee;
+  --color-surface: #f6f7fb;
+  --color-brand: #2563eb;
+  --color-brand-deep: #1d4ed8;
+  --color-brand-soft: #eef3ff;
+  --color-brand-tint: #dce6ff;
+
+  /* Sunburst palette — the chart's colours reused for legends and step markers. */
+  --color-chart-blue: #2f6bff;
+  --color-chart-violet: #8b5cf6;
+  --color-chart-cyan: #22b8e6;
+  --color-chart-teal: #14b8a6;
+  --color-chart-orange: #fb8a3c;
+  --color-chart-coral: #ff6b8a;
+  --color-chart-amber: #f5b53a;
+  --color-chart-mint: #4ade80;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  position: relative;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* One backdrop for the whole page: the generated mesh, fixed, blurred to
+   smooth it out, sitting under every section. Sections are transparent. */
+.backdrop {
+  position: fixed;
+  inset: -10%;
+  z-index: -1;
+  background-image: url("/images/backdrop.jpg");
+  background-size: cover;
+  background-position: center;
+  filter: blur(36px) saturate(1.25);
+  opacity: 1;
+  pointer-events: none;
+}
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
+}
+
+::selection {
+  background: var(--color-brand-tint);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+/* Page-load reveal for the hero. One orchestrated moment; nothing else animates. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.12s; }
+.fade-up-3 { animation-delay: 0.19s; }
+.fade-up-4 { animation-delay: 0.26s; }
+.fade-up-5 { animation-delay: 0.33s; }
+.fade-up-6 { animation-delay: 0.45s; }
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .fade-up {
+    animation: none;
+  }
+}
+
+/* Native <details> used for the FAQ: rotate the chevron when open. */
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] .faq-chevron {
+  transform: rotate(45deg);
+}

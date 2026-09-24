@@ -1,0 +1,164 @@
+Every time you back up an iPhone or iPad to your Mac with a cable, macOS writes a full copy of the device's data into a hidden folder in your home directory. Back up a 128 GB iPhone a few times over a couple of years, add the old iPad and the phone you traded in, and it's common to find 50 to 150 GB of backups you forgot existed. This guide shows where they live, how to delete them from Finder (the supported way) or by hand, how to tell which ones you still need, and how to move future backups to an external drive.
+
+## The short version
+
+- iPhone and iPad backups made through Finder (or iTunes on older Macs) live in `~/Library/Application Support/MobileSync/Backup/`.
+- The supported way to delete them: connect any iOS device, select it in Finder's sidebar, click **Manage Backups…**, pick the backup, click **Delete Backup**.
+- You can also delete them without a device via **System Settings → General → Storage → iOS Files**, or by trashing the folders directly.
+- Deleting a backup never touches the device itself or your iCloud backup. It only removes the copy stored on the Mac.
+- Keep one recent backup per device you still own. Delete backups of devices you no longer have, unless they hold data that never made it to a newer phone.
+
+## Where iPhone backups are stored on a Mac
+
+Finder puts every local device backup here:
+
+```
+~/Library/Application Support/MobileSync/Backup/
+```
+
+The `~` is your home folder, and `Library` is hidden by default. Inside `Backup` you'll find one folder per device, named with a 40-character hexadecimal string (the device's unique identifier) rather than "Priya's iPhone". Each folder contains thousands of small hashed files plus a handful of readable ones: `Info.plist` (which has the device name, model and iOS version in plain text), `Manifest.plist` and `Manifest.db`.
+
+That structure matters for two reasons. First, you can't open a backup and pull out a single photo the way you'd browse a folder; it's meant to be restored to a device in one piece. Second, the size is always a full copy. Finder does not do incremental backups across sessions the way Time Machine does. A device with 90 GB used produces a backup of roughly 60 to 90 GB depending on how much of that data lives in iCloud and is skipped.
+
+To jump straight there in Finder, press **⇧⌘G** (Go to Folder), paste the path above, and press Return.
+
+## How much space are they using?
+
+The fastest check is **System Settings → General → Storage**. Wait for the categories to calculate, then look for **iOS Files** in the list. Click the ⓘ next to it and you'll see each backup with the device name and its size. This is also one of the deletion methods, covered below.
+
+From Terminal, this gives the total plus a per-device breakdown:
+
+```bash
+du -sh ~/Library/Application\ Support/MobileSync/Backup/* 2>/dev/null
+```
+
+And to see which device each folder belongs to without opening anything:
+
+```bash
+for d in ~/Library/Application\ Support/MobileSync/Backup/*/; do
+  echo "$(du -sh "$d" | cut -f1)  $(defaults read "$d/Info.plist" "Device Name" 2>/dev/null)  $(defaults read "$d/Info.plist" "Last Backup Date" 2>/dev/null)"
+done
+```
+
+That prints size, device name and last backup date on one line per backup, which is usually enough to decide what stays.
+
+<Callout type="note" title="Backups that don't show up in the Storage settings">
+The Storage panel only lists backups it can read. Encrypted backups and backups made by third-party tools (iMazing, AnyTrans, older iTunes versions) sometimes don't appear there even though they're in the same folder. If the Storage total for iOS Files looks smaller than what `du` reports, check the folder directly.
+</Callout>
+
+## Method 1: Delete backups from Finder (recommended)
+
+This is Apple's supported route and the safest, because Finder removes the backup cleanly and updates its own records.
+
+1. Connect an iPhone or iPad to the Mac with a cable. It doesn't have to be the device the backup belongs to; any device gets you into the management screen.
+2. Open a **Finder** window. The device appears in the sidebar under **Locations**. Click it. (If it asks you to Trust the computer, tap Trust on the device.)
+3. On the **General** tab, click **Manage Backups…**.
+4. A sheet lists every local backup with the device name, date and whether it's encrypted (a padlock).
+5. Select the backup to remove and click **Delete Backup**. Confirm.
+6. Repeat for any others, then click **OK**.
+
+The space is released immediately; there's no Trash step. Right-clicking a backup in that list also offers **Show in Finder**, which is handy for confirming the folder size before you commit, and **Archive**, which protects a backup from being overwritten by the next one.
+
+## Method 2: Delete from System Settings (no device needed)
+
+If you don't have an iOS device to hand, or the backups belong to devices you no longer own:
+
+1. Open **System Settings → General → Storage**.
+2. Let the categories finish calculating, then click the ⓘ beside **iOS Files**.
+3. Select a backup. Click **Delete** (bottom right), confirm.
+
+This works on macOS Ventura and later. On Monterey and earlier the same list is under **About This Mac → Storage → Manage… → iOS Files**.
+
+## Method 3: Delete the folder directly
+
+Deleting the backup folder from Finder or Terminal works too, and it's the only option when Finder's management screen doesn't list a backup (corrupted or third-party backups, for example).
+
+1. In Finder press ⇧⌘G and go to `~/Library/Application Support/MobileSync/Backup/`.
+2. Switch to list view (⌘2) and turn on **View → Show View Options → Calculate all sizes** so the Size column fills.
+3. Right-click any folder and open its `Info.plist` in TextEdit or Quick Look to confirm which device it is.
+4. Move the folder to the Trash and empty the Trash.
+
+Or, if you've identified the folder name:
+
+```bash
+rm -rf ~/Library/Application\ Support/MobileSync/Backup/<folder-name>
+```
+
+To remove every local backup at once:
+
+```bash
+rm -rf ~/Library/Application\ Support/MobileSync/Backup/*
+```
+
+<Callout type="warning" title="Two things to check before you delete a folder by hand">
+Quit Finder's device window first, so it isn't mid-backup. And if Terminal reports "Operation not permitted", give Terminal Full Disk Access in System Settings → Privacy & Security, then try again. Never delete the parent `MobileSync` folder itself; Finder expects it to exist.
+</Callout>
+
+## Which backups should you keep?
+
+A backup is only worth its space if you'd restore from it. Ask three questions per backup:
+
+**Do I still own this device?** Backups of a phone you sold or traded in two years ago are almost never useful, with one exception: if that device held photos, messages or app data that you never migrated to its replacement. If you set up the new phone by restoring from this backup, the data already came across and the old backup can go.
+
+**Is this the most recent backup for the device?** Finder keeps exactly one backup per device by default; each new backup overwrites the previous one unless you archived it. So if you see several folders for the same device name, the older ones are archives or leftovers from a previous macOS install. Keep the newest.
+
+**Is iCloud Backup on for the device?** Check on the iPhone under Settings → your name → iCloud → iCloud Backup. If iCloud backs it up nightly, the Mac copy is a secondary safety net. Most people can safely keep just one and refresh it before major iOS updates.
+
+The one backup you should think twice about is an **encrypted** backup (padlock icon). Encrypted backups include Health data, saved passwords, Wi-Fi settings and website history that unencrypted and iCloud backups skip. If it's the only encrypted backup you have, make a new one before deleting it.
+
+## Does deleting a backup affect my iPhone or iCloud?
+
+No. A local backup is a copy that only exists on the Mac. Deleting it changes nothing on the device, nothing in iCloud, and nothing in your Apple Account. iCloud backups are managed separately, from the iPhone (Settings → your name → iCloud → Manage Account Storage → Backups) or from **System Settings → your name → iCloud → Manage** on the Mac. Deleting one type has no effect on the other.
+
+The only real consequence is losing the ability to restore that specific snapshot of the device. If the phone dies tomorrow and you deleted its only backup yesterday, you're relying on iCloud. That's the trade.
+
+## Stop backups from eating the internal disk again
+
+### Back up to iCloud instead
+
+For most people the simplest fix is to let iCloud Backup handle it and stop backing up to the Mac. On the iPhone: Settings → your name → iCloud → iCloud Backup → on. On the Mac, when the device is connected, choose **Back up your most important data on your iPhone to iCloud** in the Finder General tab. Local backups stop being created; delete the last one and the space stays free. The cost is iCloud storage, which for a 128 GB device typically means the 200 GB plan.
+
+### Move local backups to an external drive
+
+If you prefer local backups (faster restores, no subscription, encrypted with a password you control), you can redirect them to an external SSD using a symbolic link. Finder always writes to the `MobileSync/Backup` path, so you replace that folder with a pointer to a folder on the external drive.
+
+1. Plug in the external drive, formatted as APFS or Mac OS Extended. Create a folder on it, for example `/Volumes/Backups/iOSBackups`.
+2. Move the existing `Backup` folder there (or delete it if you've decided you don't need the old backups).
+3. In Terminal, create the link:
+
+```bash
+ln -s /Volumes/Backups/iOSBackups ~/Library/Application\ Support/MobileSync/Backup
+```
+
+4. Give Finder Full Disk Access if it isn't already (System Settings → Privacy & Security → Full Disk Access), otherwise it may refuse to follow the link.
+5. Connect the device and run a backup. Confirm the new files land on the external drive.
+
+The drive has to be connected when you back up, and if it isn't, Finder will report an error rather than silently backing up to the internal disk (because the link target is missing). Tools like iMazing offer the same relocation in a menu, with no Terminal.
+
+### Turn off automatic backups on connect
+
+Finder backs up automatically when you plug the device in if **Automatically sync when this iPhone is connected** is on. Untick it in the Finder General tab if you'd rather back up deliberately, and you'll stop accumulating fresh multi-gigabyte backups every time you charge from the Mac.
+
+## Frequently asked questions
+
+**Can I delete iPhone backups on Mac without the phone?**
+Yes, through System Settings → General → Storage → iOS Files, or by deleting the folders in `~/Library/Application Support/MobileSync/Backup/` directly.
+
+**Why is my iPhone backup so large?**
+Because it's a full copy of everything on the device that isn't already in iCloud: photos and videos if iCloud Photos is off, message attachments, app data, downloaded media in apps like Podcasts and Netflix. A 256 GB iPhone with 200 GB used produces a backup close to that size unless iCloud Photos is on, in which case the photo library is skipped.
+
+**Where are iPhone backups stored on macOS Sequoia and Tahoe?**
+Same place as always: `~/Library/Application Support/MobileSync/Backup/`. The location hasn't changed since iTunes; only the app managing it has (Finder since macOS Catalina).
+
+**I deleted the backup but the space didn't come back.**
+Empty the Trash if you deleted by dragging. If you used Finder's Delete Backup and free space still didn't change, a Time Machine local snapshot is holding the blocks; the [snapshot guide](/blog/delete-time-machine-local-snapshots-mac) shows how to clear it.
+
+**Can I view what's inside a backup before deleting it?**
+Not with Apple's tools. Third-party apps such as iMazing or iExplorer can browse photos, messages and app data inside a backup, which is useful if you're unsure whether an old backup holds anything unique.
+
+**Should I keep a backup of my old iPhone after I've moved to a new one?**
+If you set the new phone up from that backup or from iCloud, everything transferable came across. Keep it for a month as insurance, then delete it.
+
+## Where this fits in a bigger cleanup
+
+iOS backups are one of the best space-per-minute wins on a Mac because they're large, easy to identify and safe to remove. The other categories in the same league are Time Machine local snapshots, app caches, old installers in Downloads and the Mail app's offline attachment store. The [complete guide to freeing up space on a Mac](/blog/how-to-free-up-space-on-mac) orders all of them by how much they typically return.
