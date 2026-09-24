@@ -29,8 +29,11 @@ export const repo = {
 /** `alternates.types` entry for the RSS feed; pages that set their own `alternates` must include it. */
 export const rssAlternate = { "application/rss+xml": "/blog/feed.xml" } as const;
 
-/** The zip attached to every GitHub release under this exact name (macApp/scripts/build-release.sh). */
-export const releaseAsset = "DiskCleanAI.zip";
+/**
+ * The drag-to-Applications disk image attached to every GitHub release under this exact name
+ * (macApp/scripts/build-release.sh). The release also carries DiskCleanAI.zip, which the in-app updater uses.
+ */
+export const releaseAsset = "DiskCleanAI.dmg";
 
 /** Direct download: GitHub always serves this file from the newest published release. */
 export const downloadUrl = `${repo.releases}/latest/download/${releaseAsset}`;

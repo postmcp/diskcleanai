@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Builds a distributable Disk Clean AI update: archive → Developer ID export →
-# notarize → staple → zip. Prints the `gh release create` command that publishes it; the
-# app's updater picks up the newest GitHub release on postmcp/diskcleanai.
+# Builds a distributable Disk Clean AI release: universal archive → Developer ID export →
+# notarize → staple → zip (for the in-app updater) + drag-to-Applications DMG (for the website).
+# Prints the `gh release create` command that publishes both; the app's updater picks up the
+# newest GitHub release on postmcp/diskcleanai.
 #
 #   ./scripts/build-release.sh          # TEAM_ID defaults to 4P833G76XL
 #
@@ -9,9 +10,11 @@
 #   • "Developer ID Application" certificate in your login keychain
 #   • notarytool credentials stored under $NOTARY_PROFILE:
 #       xcrun notarytool store-credentials diskcleanai --apple-id you@example.com --team-id 4P833G76XL
+#   • brew install create-dmg
 #
 # Optional:
 #   SKIP_NOTARIZE=1   build and zip without notarizing (local testing only)
+#   SKIP_DMG=1        only build the zip
 #   OUT=./build       output directory (default ./build)
 #   REPO=owner/name   GitHub repository to publish to (default postmcp/diskcleanai)
 set -euo pipefail
@@ -31,7 +34,7 @@ mkdir -p "$OUT"
 
 echo "▸ Archiving (Release)…"
 xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
-  -archivePath "$ARCHIVE" archive \
+  -archivePath "$ARCHIVE" archive ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
   DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Development" \
   -allowProvisioningUpdates -quiet
 
@@ -49,8 +52,13 @@ BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.
 ZIP="$OUT/DiskCleanAI.zip"
 echo "▸ Built $VERSION (build $BUILD)"
 
+# One universal binary serves Apple silicon and Intel; refuse to ship a single-architecture build.
+ARCHS_BUILT=$(lipo -archs "$APP/Contents/MacOS/$SCHEME")
+[[ "$ARCHS_BUILT" == *arm64* && "$ARCHS_BUILT" == *x86_64* ]] || { echo "Not universal: $ARCHS_BUILT" >&2; exit 1; }
+echo "▸ Universal binary: $ARCHS_BUILT"
+
 codesign --verify --deep --strict "$APP"
-echo "▸ Signature OK: $(codesign -dv "$APP" 2>&1 | grep '^Authority=' | head -1)"
+echo "▸ Signature OK: $(codesign -dvv "$APP" 2>&1 | grep '^Authority=' | head -1)"
 
 if [[ -z "${SKIP_NOTARIZE:-}" ]]; then
   echo "▸ Notarizing (this usually takes 1–5 minutes)…"
@@ -71,15 +79,24 @@ ditto -c -k --keepParent "$APP" "$ZIP"
 SHA=$(shasum -a 256 "$ZIP" | cut -d' ' -f1)
 SIZE=$(stat -f%z "$ZIP")
 
+DMG="$OUT/DiskCleanAI.dmg"
+ASSETS="\"$ZIP\""
+if [[ -z "${SKIP_DMG:-}" ]]; then
+  ./scripts/make-dmg.sh "$APP" "$DMG"
+  ASSETS="$ASSETS \"$DMG\""
+  DMG_LINE="  $DMG · $(stat -f%z "$DMG") bytes · sha256 $(shasum -a 256 "$DMG" | cut -d' ' -f1)"
+fi
+
 cat <<MSG
 
 ✔ $ZIP
   version $VERSION · build $BUILD · $SIZE bytes
   sha256  $SHA
+${DMG_LINE:-}
 
-Next — publish it as a GitHub release (the tag must match the app version, and the
-asset must stay named DiskCleanAI.zip so the website's Download button finds it):
-  gh release create v$VERSION "$ZIP" --repo $REPO --title "Disk Clean AI $VERSION" --notes-file notes.md
+Next — publish it as a GitHub release (the tag must match the app version; keep the asset
+names: the updater downloads DiskCleanAI.zip, the website's Download button DiskCleanAI.dmg):
+  gh release create v$VERSION $ASSETS --repo $REPO --title "Disk Clean AI $VERSION" --notes-file notes.md
 
 Every running copy offers the update on its next daily check; the website's
 Download button follows /releases/latest automatically.

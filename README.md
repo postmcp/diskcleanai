@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/postmcp/diskcleanai/releases/latest/download/DiskCleanAI.zip"><strong>Download for macOS</strong></a> ·
+  <a href="https://github.com/postmcp/diskcleanai/releases/latest/download/DiskCleanAI.dmg"><strong>Download for macOS</strong></a> ·
   <a href="https://diskcleanai.com">Website</a> ·
   <a href="https://github.com/postmcp/diskcleanai/issues">Report a bug</a> ·
   <a href="CONTRIBUTING.md">Contribute</a>
@@ -58,12 +58,13 @@
 
 ## Install
 
-1. Download [**DiskCleanAI.zip**](https://github.com/postmcp/diskcleanai/releases/latest/download/DiskCleanAI.zip)
+1. Download [**DiskCleanAI.dmg**](https://github.com/postmcp/diskcleanai/releases/latest/download/DiskCleanAI.dmg)
    from the latest release (older versions are on the [releases page](https://github.com/postmcp/diskcleanai/releases)).
-2. Unzip it and drag **Disk Clean AI** to Applications. Builds are signed with a Developer ID and notarized by Apple.
+2. Open it and drag **Disk Clean AI** onto the **Applications** folder in the window, then eject the disk image.
+   Builds are signed with a Developer ID and notarized by Apple.
 3. Optional: grant **Full Disk Access** (System Settings → Privacy & Security) so it can see everything.
 
-Requires macOS 14 Sonoma or later, on Apple silicon or Intel. The app updates itself from new
+Requires macOS 14 Sonoma or later. One universal download runs natively on Apple silicon and Intel. The app updates itself from new
 releases on this repository.
 
 ## Build from source
